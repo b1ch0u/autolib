@@ -31,8 +31,5 @@ def create_user(
     return db_user
 
 
-def get_free_cars(session: Session, seats: int | None = None):
-    query = session.query(models.Car)
-    if seats:
-        query = query.filter(models.Car.model.seats >= seats)
-    return query.all()
+def get_free_cars(session: Session):
+    return session.query(models.Car)

@@ -13,7 +13,6 @@ from .authentication import *
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 
@@ -64,15 +63,19 @@ def read_users_car(user: schemas.User = Depends(get_current_user)):
 def ask_for_a_car(
     session: Session = Depends(get_db),
     user: schemas.User = Depends(get_current_user),
-    seats: int | None = None
 ):
     if user.car:
         return user.car
 
     try:
-        car: models.Car = next(iter(crud.get_free_cars(session, seats)))
+        print(crud.get_free_cars(session))
+        car: models.Car = next(iter(crud.get_free_cars(session)))
     except StopIteration:
-        return {'error': 'No car available at the moment'}
+        raise HTTPException(
+            status_code=409,
+            detail='No car available at the moment',
+            headers={'WWW-Authenticate': 'Bearer'},
+        )
 
     car.user_id = user.id
     session.commit()
@@ -89,7 +92,7 @@ def return_car(
     if not user.car:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='No car currently associated to this user'
+            detail='No car currently associated to this user',
             headers={'WWW-Authenticate': 'Bearer'},
         )
 
